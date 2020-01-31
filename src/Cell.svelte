@@ -23,7 +23,9 @@
   $: if (flaggable) setTimeout(() => surroundings.reveal(), 0);
 
   let textColor;
-  $: if (isMine) {
+  $: if (!stateKnown) {
+    textColor = "transparent";
+  } else if (isMine) {
     textColor = "white";
   } else {
     textColor = [
@@ -46,12 +48,7 @@
     backgroundColor = null;
   }
 
-  let cellText;
-  $: if(stateKnown){
-    cellText = isMine ? "X" : adjacentMinesCount;
-  } else {
-    cellText = "";
-  }
+  $: cellText = isMine ? "X" : adjacentMinesCount;
 </script>
 
 <style>
