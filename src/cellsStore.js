@@ -27,50 +27,39 @@ function generateCells(cellCount) {
   return shuffle([...clearCells, ...knownCells, ...mineCells]);
 }
 
-function createCellsStore() {
-  const width = 100;
-  const height = 100;
-  const initial = {
-    width,
-    height,
-    cells: generateCells(width * height)
-  };
-  const { subscribe, set, update } = writable(initial);
-  return {
-    subscribe,
-    reveal: idx =>
-      update(state => {
-        state.cells[idx].stateKnown = true;
-        return state;
-      })
-  };
-}
-export const cellsStore = createCellsStore();
-
-export const width = derived(
-  [cellsStore],
-  ([$cellsStore]) => $cellsStore.width
-);
-export const height = derived(
-  [cellsStore],
-  ([$cellsStore]) => $cellsStore.height
-);
+export const width = writable(100);
+export const height = writable(100);
 export const cellCount = derived(
   [width, height],
   ([$width, $height]) => $width * $height
 );
+export const cellStores = generateCells(get(cellCount)).map(createCellStore);
+export const surroundingStores = cellStores.map((_, idx) =>
+  createSurroundingsStore(idx)
+);
 
-export function deriveCellStore(idx) {
-  return derived([cellsStore], ([$cellsStore]) => $cellsStore.cells[idx]);
+export function regenerate() {
+  generateCells(get(cellCount)).forEach((newCell, idx) =>
+    cellStores[idx].set(newCell)
+  );
 }
 
-export function deriveSurroundingsStore(idx, width, height) {
-  const idxs = surroundingIndices(idx, width, height);
-  const store = derived([cellsStore], ([$cellsStore]) =>
-    idxs.map(idx => $cellsStore.cells[idx])
-  );
+function createCellStore(cell) {
+  const { subscribe, set, update } = writable(cell);
+  return {
+    subscribe,
+    set,
+    reveal: () => update(cell => ({ ...cell, stateKnown: true }))
+  };
+}
+
+export function createSurroundingsStore(idx) {
+  const idxs = surroundingIndices(idx, get(width), get(height));
+  const relevantStores = idxs.map(idx => cellStores[idx]);
+  // @ts-ignore
+  const store = derived(relevantStores, values => values);
   return {
     ...store,
-    reveal: () => idxs.forEach(cellsStore.reveal)
-  }
+    reveal: () => relevantStores.forEach(store => store.reveal())
+  };
 }

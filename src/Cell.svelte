@@ -1,9 +1,9 @@
 <script>
-  import { deriveCellStore, deriveSurroundingsStore, width, height } from "./cellsStore";
+  import { cellStores, surroundingStores } from "./cellsStore";
 
   export let index;
-  $: me = deriveCellStore(index);
-  $: surroundings = deriveSurroundingsStore(index, $width, $height);
+  $: me = cellStores[index];
+  $: surroundings = surroundingStores[index];
 
   $: isMine = $me.isMine;
   $: stateKnown = $me.stateKnown;
