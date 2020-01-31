@@ -1,5 +1,12 @@
 <script>
-  import { cellStores, surroundingStores, width } from "./cellsStore";
+  import {
+    cellStores,
+    surroundingStores,
+    width,
+    height,
+    cellSize,
+    canvasStore
+  } from "./cellsStore";
 
   export let index;
   $: me = cellStores[index];
@@ -21,55 +28,79 @@
 
   $: if (clearable) setTimeout(() => surroundings.reveal(), 0);
   $: if (flaggable) setTimeout(() => surroundings.reveal(), 0);
-
-  let textColor;
-  $: if (!stateKnown) {
-    textColor = "transparent";
-  } else if (isMine) {
-    textColor = "white";
-  } else {
-    textColor = [
-      "transparent",
-      "blue",
-      "green",
-      "red",
-      "purple",
-      "maroon",
-      "#0aa",
-      "black",
-      "#444"
-    ][adjacentMinesCount];
-  }
-
-  $: x = Math.floor(index / $width);
+$: x = Math.floor(index / $width);
   $: y = index % $width;
+  $: rectanglePixelX = x * $cellSize;
+  $: rectanglePixelY = y * $cellSize;
+  $: textPixelX = rectanglePixelX + $cellSize / 2;
+  $: textPixelY = rectanglePixelY + $cellSize / 2;
+
   $: light = (x + y) % 2 === 0;
+  $: text = isMine ? "X" : adjacentMinesCount;
+  $: textColor = isMine
+    ? "white"
+    : [
+        "transparent",
+        "blue",
+        "green",
+        "red",
+        "purple",
+        "maroon",
+        "#0aa",
+        "black",
+        "#444"
+      ][adjacentMinesCount];
+
   function getBackgroundColor(stateKnown, isMine, light) {
-    if (stateKnown && isMine) return "#f55";
+    if (stateKnown && isMine && light) return "#f55";
+    if (stateKnown && isMine && !light) return "#d33";
     if (stateKnown && !isMine && light) return "#fff";
-    if (stateKnown && !isMine && !light) return "#ddd";
+    if (stateKnown && !isMine && !light) return "#ccc";
     if (!stateKnown && light) return "#aaa";
-    if (!stateKnown && !light) return "#999";
+    if (!stateKnown && !light) return "#777";
   }
+
   $: backgroundColor = getBackgroundColor(stateKnown, isMine, light);
 
-  $: cellText = isMine ? "X" : adjacentMinesCount;
-</script>
-
-<style>
-  .cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 5pt;
-    font-weight: 700;
-    height: 8px;
-    width: 8px;
+  function drawCell(
+    ctx,
+    rectanglePixelX,
+    rectanglePixelY,
+    textPixelX,
+    textPixelY,
+    size,
+    stateKnown,
+    text,
+    textColor,
+    backgroundColor
+  ) {
+    if (ctx === null) return;
+    ctx.beginPath();
+    ctx.fillStyle = backgroundColor;
+    ctx.rect(rectanglePixelX, rectanglePixelY, size, size);
+    ctx.fill();
+    if (stateKnown) {
+      ctx.fillStyle = textColor;
+      ctx.fillText(text, textPixelX, textPixelY);
+    }
   }
-</style>
 
-<div
-  class="cell"
-  style="color: {textColor}; background-color: {backgroundColor}">
-  {cellText}
-</div>
+  $: ctx = $canvasStore === null ? null : $canvasStore.getContext("2d");
+
+  $: if(ctx != null) ctx.font = $cellSize - 1 + "px arial";
+  $: if(ctx != null) ctx.textAlign = "center";
+  $: if(ctx != null) ctx.textBaseline = "middle";
+
+  $: drawCell(
+    ctx,
+    rectanglePixelX,
+    rectanglePixelY,
+    textPixelX,
+    textPixelY,
+    $cellSize,
+    stateKnown,
+    text,
+    textColor,
+    backgroundColor
+  );
+</script>

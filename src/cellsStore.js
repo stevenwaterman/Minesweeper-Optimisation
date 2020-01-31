@@ -26,9 +26,12 @@ function generateCells(cellCount) {
 
   return shuffle([...clearCells, ...knownCells, ...mineCells]);
 }
-
+export const canvasStore = writable(null);
 export const width = writable(100);
 export const height = writable(100);
+export const cellSize = derived([width, height], ([$width, $height]) =>
+  Math.floor(800 / Math.max($width, $height))
+);
 export const cellCount = derived(
   [width, height],
   ([$width, $height]) => $width * $height
