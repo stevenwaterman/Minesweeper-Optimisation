@@ -1,5 +1,5 @@
 <script>
-  import { cellStores, surroundingStores } from "./cellsStore";
+  import { cellStores, surroundingStores, width } from "./cellsStore";
 
   export let index;
   $: me = cellStores[index];
@@ -41,20 +41,23 @@
     ][adjacentMinesCount];
   }
 
-  let backgroundColor;
-  $: if (stateKnown) {
-    backgroundColor = isMine ? "#f55" : "white";
-  } else {
-    backgroundColor = null;
+  $: x = Math.floor(index / $width);
+  $: y = index % $width;
+  $: light = (x + y) % 2 === 0;
+  function getBackgroundColor(stateKnown, isMine, light) {
+    if (stateKnown && isMine) return "#f55";
+    if (stateKnown && !isMine && light) return "#fff";
+    if (stateKnown && !isMine && !light) return "#ddd";
+    if (!stateKnown && light) return "#aaa";
+    if (!stateKnown && !light) return "#999";
   }
+  $: backgroundColor = getBackgroundColor(stateKnown, isMine, light);
 
   $: cellText = isMine ? "X" : adjacentMinesCount;
 </script>
 
 <style>
   .cell {
-    border: 1px solid #aaa;
-    background-color: #ddd;
     display: flex;
     align-items: center;
     justify-content: center;
